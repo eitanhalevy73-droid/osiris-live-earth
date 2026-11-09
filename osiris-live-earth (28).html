@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>OSIRIS · Live Earth</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600&display=swap');
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 0%,#071826 0%,#010308 65%);overflow:hidden;font:13px/1.4 'Inter',system-ui,sans-serif;color:#d9f7ef}
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#1f5a6b;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#2f84a0}
+#g{position:absolute;inset:0;z-index:1;background:transparent}
+#sky{position:absolute;inset:0;z-index:0;pointer-events:none}
+.box{position:absolute;background:linear-gradient(160deg,rgba(10,22,32,.88),rgba(5,12,19,.88));backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(79,221,221,.22);border-radius:14px;z-index:5;box-shadow:0 8px 32px -8px #000a,0 0 0 1px #0006 inset}
+#side{top:10px;left:10px;bottom:10px;width:290px;display:flex;flex-direction:column;padding:10px;transition:transform .25s}
+#side.hide{transform:translateX(-310px)}
+#tog{position:absolute;top:14px;left:306px;z-index:6;background:rgba(10,22,32,.9);color:#4fd;border:1px solid #1d3a4a;border-radius:8px;padding:6px 9px;cursor:pointer;transition:left .25s,box-shadow .15s}#tog:hover{box-shadow:0 0 10px -2px #4fd8}
+#tog.shift{left:12px}
+h1{margin:0 0 6px;font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;letter-spacing:4px;color:#5ffbe0;text-shadow:0 0 12px rgba(95,251,224,.55),0 0 2px #5ffbe0}h1 small{letter-spacing:.5px;color:#7fa3ab;font-weight:400;font-size:11px;display:block;margin-top:3px;text-shadow:none}
+input[type=text],select,textarea{width:100%;background:#071621;border:1px solid #1d3a4a;color:#d9f7ef;padding:7px 8px;border-radius:7px;font:inherit;transition:border-color .15s,box-shadow .15s}input[type=text]:focus,select:focus,textarea:focus{outline:none;border-color:#4fd;box-shadow:0 0 0 2px rgba(79,221,221,.18)}
+textarea{height:70px;resize:vertical}
+.row{display:flex;gap:6px;margin:6px 0;align-items:center}
+button.b{background:linear-gradient(180deg,#163b4a,#0f2832);color:#cfe;border:1px solid #1f5a6b;border-radius:7px;padding:6px 10px;cursor:pointer;font:inherit;transition:transform .12s,background .15s,box-shadow .15s}
+button.b:hover{background:linear-gradient(180deg,#1f4e60,#163b4a);box-shadow:0 0 10px -2px #4fd8}button.b:active{transform:scale(.96)}button.b.on{background:linear-gradient(180deg,#22a78c,#17715c);border-color:#4fd;box-shadow:0 0 12px -2px #4fdc}
+#list{flex:1;overflow:auto;margin:6px -4px 0;padding:0 4px}
+.cam{padding:6px 7px;border-radius:6px;cursor:pointer;display:flex;gap:6px;align-items:center;border:1px solid transparent}
+.cam{transition:background .15s,border-color .15s}.cam:hover{background:#12303d;border-color:#1f5a6b}.cam.sel{background:linear-gradient(90deg,#173f4f,#143544);border-color:#4fd;box-shadow:0 0 10px -4px #4fd9}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.cam i{width:8px;height:8px;border-radius:50%;flex:none;background:#f55;box-shadow:0 0 6px #f55;animation:pulse 2.2s ease-in-out infinite}.cam.dot-cam i{background:#4fd;box-shadow:0 0 6px #4fd}.cam.off{opacity:.42}.cam.off i{background:#667;box-shadow:none;animation:none}
+.cam span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cam em{font-style:normal;opacity:.55;font-size:11px}
+#view{right:10px;bottom:10px;width:460px;max-width:calc(100% - 330px);padding:8px;display:none}
+#view .t{margin:0 0 6px;font-weight:600;display:flex;gap:6px;align-items:center}#view .t span{flex:1}
+#vm{aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;position:relative}
+#vm iframe,#vm img,#vm video,#vm>div{width:100%;height:100%;border:0;display:block;object-fit:cover}
+#vm p{margin:0;padding:20px;text-align:center;color:#fb8}
+#top{top:10px;right:10px;padding:8px 10px;display:flex;gap:10px;align-items:center}
+#clock{font-variant-numeric:tabular-nums;color:#7fe;font-family:'Orbitron',sans-serif;letter-spacing:1px}
+#toast{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);background:linear-gradient(160deg,#0e3340,#0a222c);border:1px solid #4fd;border-radius:9px;padding:9px 16px;z-index:9;display:none;box-shadow:0 6px 24px -6px #000c,0 0 16px -4px #4fd6;font-weight:500}
+
+#grid{position:absolute;left:310px;right:10px;top:56px;bottom:10px;z-index:5;display:none;flex-direction:column;background:rgba(6,14,22,.92);border:1px solid #1d3a4a;border-radius:10px;padding:8px}
+#satmap{position:absolute;left:310px;right:10px;top:56px;bottom:10px;z-index:4;display:none;border-radius:10px;overflow:hidden;border:1px solid #1d3a4a}
+#satmap .leaflet-popup-content{color:#123;font:13px system-ui}#satmap .leaflet-popup-content button{margin-top:4px}
+#ghead{display:flex;gap:6px;align-items:center;margin-bottom:6px}#ghead b{flex:1;color:#4fd;letter-spacing:2px}
+#gslots{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;min-height:0}
+.slot{position:relative;background:#02070c;border:1px solid #1d3a4a;border-radius:8px;overflow:hidden;min-height:0}
+.slot.over{outline:2px dashed #4fd}.slot.target{outline:2px solid #ffe14a}
+.slot .media,.slot iframe,.slot img,.slot video{position:absolute;inset:0;width:100%;height:100%;border:0;object-fit:cover;background:#000}
+.slot .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#5a8a99;text-align:center;font-size:12px;gap:4px;line-height:1.4;cursor:pointer}.slot .empty i{font-style:normal;font-size:28px}.slot.has .empty{display:none}
+.osd{position:absolute;left:0;right:0;padding:6px 10px;display:none;justify-content:space-between;gap:8px;font:600 12px ui-monospace,Consolas,monospace;color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000;z-index:2;pointer-events:none}
+.slot.has .osd{display:flex}.osd.top{top:0;background:linear-gradient(#000c,#0000);pointer-events:auto;cursor:grab}.osd.bot{bottom:0;background:linear-gradient(#0000,#000c)}
+.lv{color:#ff5a5a;white-space:nowrap}.osd b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#grid.noosd .osd{display:none!important}
+.tools{position:absolute;top:34px;right:6px;display:none;flex-direction:column;gap:5px;z-index:4;opacity:0;transition:.15s}.slot.has .tools{display:flex}.slot:hover .tools,.slot.full .tools{opacity:1}
+.tools button,.nav,.fsbar button{background:rgba(0,0,0,.65);color:#fff;border:1px solid #ffffff55;border-radius:6px;cursor:pointer;font:inherit}
+.tools button{width:32px;height:30px;font-size:15px}.tools button:hover,.nav:hover{background:#1f8a74}
+.slot .nav,.slot .fsbar{display:none}
+.slot.full{position:fixed!important;inset:0;z-index:60;border-radius:0;border:0}
+body.isfull .slot:not(.full){visibility:hidden}
+.slot.full .nav{display:flex}.slot.full .fsbar{display:flex}
+.nav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;font-size:38px;width:54px;height:90px;align-items:center;justify-content:center}.nav.prev{left:16px}.nav.next{right:16px}
+.fsbar{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);z-index:5;gap:10px;align-items:center;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:20px;color:#fff}.fsbar button{padding:5px 12px}
+.slot.full .osd{font-size:16px;padding:14px 22px}.slot.full .tools{top:64px}
+body.snapping .tools,body.snapping .fsbar,body.snapping .nav{visibility:hidden}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9}.flash.go{animation:fl .35s}@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+@media(max-width:900px){#view{max-width:calc(100% - 20px);left:10px;width:auto}#grid{left:10px!important}}
+</style></head><body>
+<div id="g"></div><canvas id="sky"></canvas>
+<button id="tog">☰</button>
+<div class="box" id="side">
+ <h1>OSIRIS · LIVE EARTH<small id="count"></small></h1>
+ <input type="text" id="q" placeholder="Search cameras…">
+ <div class="row"><select id="reg"><option value="">All regions</option></select><label><input type="checkbox" id="showoff"> offline</label></div>
+ <div class="row"><button class="b" id="tour">▶ Auto tour</button><button class="b" id="rand">🎲 Random</button><button class="b" id="spin">⟳ Spin</button><button class="b" id="verify" title="Re-check every camera now">✓ Verify all</button></div>
+ <div class="row" style="gap:4px"><span style="white-space:nowrap">Sun</span><input type="range" id="sun" min="0" max="1439" value="0" style="flex:1"><button class="b" id="live">Live</button></div>
+ <div id="list"></div>
+ <details style="margin-top:6px"><summary style="cursor:pointer;color:#4fd">+ Add cameras</summary>
+  <div style="margin:6px 0">Click empty globe to pick a spot (<span id="pk">none</span>), then:</div>
+  <input type="text" id="yt" placeholder="YouTube live link / channel link"><input type="text" id="nm" placeholder="Name" style="margin-top:4px">
+  <div class="row"><button class="b" id="add">Add at spot</button></div>
+  <div>Bulk import — one per line:<br><code>Name | lat, lng | youtube link</code></div>
+  <textarea id="bulk" placeholder="Eiffel Tower | 48.858, 2.294 | https://youtube.com/watch?v=…"></textarea>
+  <div class="row"><button class="b" id="imp">Import</button><span id="impm"></span></div>
+ </details>
+</div>
+<div class="box" id="top"><button class="b" id="gridbtn">▦ 2×2 Grid</button><button class="b" id="satbtn">🛰 Satellite map</button><span id="clock"></span><span id="iss" style="color:#fc8"></span></div>
+<div id="satmap"></div>
+<div class="box" id="view"><div class="t"><span id="vt"></span><button class="b" id="pin">▦ Add to grid</button><button class="b" id="x">✕</button></div><div id="vm"></div><div id="vl" style="margin-top:6px"></div></div>
+<div id="grid"><div id="ghead"><b>▦ 2×2 LIVE GRID</b><button class="b" id="osdbtn">OSD: on</button><button class="b" id="gclear">Clear all</button><button class="b" id="gclose">✕ Close</button></div><div id="gslots"></div></div>
+<div id="toast"></div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/globe.gl@2"></script>
+<script src="https://unpkg.com/hls.js@1"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+window.onerror=function(msg,src,line,col,err){
+ if(msg==='Script error.'&&!line)return false; // noise from a cross-origin CDN script, not our code
+ var d=document.createElement('div');
+ d.style.cssText='position:fixed;top:0;left:0;right:0;background:#a00;color:#fff;padding:10px;z-index:999999;font:12px/1.4 monospace;white-space:pre-wrap;max-height:40vh;overflow:auto';
+ d.textContent='JS ERROR — send this to Claude: '+msg+'  [line '+line+', col '+col+']'+(err&&err.stack?'\n'+err.stack:'');
+ document.body.appendChild(d);
+ return false;
+};
+const RAW=/*CAMS*/[]; // YouTube cameras removed per request — open-data (non-YouTube) cameras below only
+const NIGHT='https://unpkg.com/three-globe/example/img/earth-night.jpg',CLOUD='https://cdn.jsdelivr.net/gh/turban/webgl-earth@master/images/fair_clouds_4k.png',WATER='https://unpkg.com/three-globe/example/img/earth-water.png';
+const $=id=>document.getElementById(id),lsGet=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const regionOf=(la,ln)=>{if(la>12&&la<42&&ln>25&&ln<62)return'Middle East';if(ln<-30&&la>12)return'North America';if(ln<-30)return'South America';if(la>-37&&la<37&&ln>-20&&ln<52)return'Africa';if(ln>110&&la<-8||ln>165)return'Oceania';if(ln>-30&&ln<45&&la>=34)return'Europe';return'Asia'};
+const feats=RAW.map(([name,lat,lng,yt])=>({name,lat,lng,yt,src:'YouTube Live'}));
+feats.push(...lsGet('mycams',[]));
+const MINE=lsGet('mycams',[]);
+const dead=lsGet('deadcams',{}),keyOf=c=>c.yt||c.img||c.name;
+const iss={name:'International Space Station (live orbit)',lat:0,lng:0,alt:.35,yt:'video:tj4knR4r1UU',src:'ISS',iss:true,region:'Space'};
+feats.push(iss);
+feats.forEach(c=>c.region=c.region||regionOf(c.lat,c.lng));
+let sel=null,simMin=null,tourT=null,spinning=true,issTrail=[];
+/* ---------- toast ---------- */
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3500)}
+/* ---------- globe ---------- */
+const globe=Globe({rendererConfig:{alpha:true,antialias:true}})($('g'))
+ .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+ .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+ .globeTileEngineUrl((x,y,l)=>'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+l+'/'+y+'/'+x)
+ .backgroundColor('rgba(0,0,0,0)')
+ .showAtmosphere(true).atmosphereColor('#7ec8ff').atmosphereAltitude(0.26)
+ .pointLat('lat').pointLng('lng').pointAltitude(d=>d.iss?d.alt:d===sel?0.018:0.0015).pointRadius(d=>(d===sel?0.5:d.iss?0.5:0.24)*ptScale)
+ .pointColor(d=>d===sel?'#ffee55':dead[keyOf(d)]?'#667':d.iss?'#ffb347':d.link?'#c9a84c':d.yt?'#ff5a5a':'#4fd').pointResolution(8)
+ .pointLabel(d=>'<div style="background:#06101ae0;border:1px solid #1d3a4a;padding:4px 8px;border-radius:6px;color:#d6f6ee">'+d.name+(dead[keyOf(d)]?' (offline)':'')+'</div>')
+ .onPointClick(d=>select(d,true))
+ .onGlobeClick(({lat,lng})=>{pick={lat,lng};$('pk').textContent=lat.toFixed(1)+', '+lng.toFixed(1)})
+ .ringLat('lat').ringLng('lng').ringColor(()=>t=>`rgba(255,90,90,${1-t})`).ringMaxRadius(2.2).ringPropagationSpeed(1.4).ringRepeatPeriod(2200)
+ .pathPointLat(p=>p[0]).pathPointLng(p=>p[1]).pathPointAlt(p=>p[2]).pathColor(()=>['rgba(255,179,71,0)','rgba(255,179,71,.9)']).pathStroke(1.2).pathTransitionDuration(0);
+let pick=null;
+globe.controls().autoRotate=true;globe.controls().autoRotateSpeed=.35;globe.controls().enableDamping=true;globe.controls().dampingFactor=.12;globe.controls().minDistance=101.5;globe.controls().zoomSpeed=1.1;globe.controls().rotateSpeed=.6;
+/* keep camera dots a roughly constant on-screen size as you zoom, like map markers, instead of ballooning up close */
+let ptScale=1;
+globe.controls().addEventListener('change',()=>{const dist=globe.camera().position.length(),ns=Math.min(1,Math.max(0.1,dist/320));if(Math.abs(ns-ptScale)>0.025){ptScale=ns;globe.pointsData(globe.pointsData())}});
+const ctl=globe.controls();$('g').addEventListener('pointerdown',()=>{ctl.autoRotate=false;spinning=false;$('spin').classList.remove('on')});
+addEventListener('resize',()=>globe.width(innerWidth).height(innerHeight));
+function visible(){const q=$('q').value.toLowerCase(),r=$('reg').value,off=$('showoff').checked;return feats.filter(c=>(!q||c.name.toLowerCase().includes(q))&&(!r||c.region===r)&&(off||!dead[keyOf(c)]||c===sel))}
+function render(){const f=visible();globe.pointsData(f);refreshSatMarkers();globe.ringsData(f.filter(c=>c.yt&&!c.iss&&!dead[keyOf(c)]));
+ $('count').textContent=f.length+' cameras · '+Object.keys(dead).length+' offline';
+ const l=$('list');l.innerHTML='';const sorted=[...f].sort((a,b)=>(dead[keyOf(a)]?1:0)-(dead[keyOf(b)]?1:0)||a.name.localeCompare(b.name));sorted.slice(0,250).forEach(c=>{const d=document.createElement('div');d.className='cam'+(c.yt?'':' dot-cam')+(dead[keyOf(c)]?' off':'')+(c===sel?' sel':'');d.innerHTML='<i></i><span></span><em>'+c.region+'</em>';d.children[1].textContent=c.name;d.onclick=()=>select(c,true);d.draggable=true;d.ondragstart=e=>{e.dataTransfer.setData('text/x-cam',String(feats.indexOf(c)));e.dataTransfer.effectAllowed='copy'};l.appendChild(d)});if(sorted.length>250){const m=document.createElement('div');m.style.cssText='padding:8px;opacity:.6';m.textContent='+ '+(sorted.length-250)+' more — search or filter to narrow, or click dots on the globe';l.appendChild(m)}}
+[...new Set(feats.map(c=>c.region))].sort().forEach(r=>{const o=document.createElement('option');o.value=o.textContent=r;$('reg').appendChild(o)});
+['q','reg','showoff'].forEach(i=>$(i).addEventListener('input',render));
+/* ---------- realistic shading ---------- */
+const SUN={x:1,y:0,z:0},U={};
+const loadImg=u=>new Promise(r=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>r(i);i.onerror=()=>r(null);i.src=u});
+function cloudCanvas(im){const w=2048,h=1024,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h),a=d.data;let alpha=false;for(let i=3;i<a.length;i+=388)if(a[i]<250){alpha=true;break}for(let i=0;i<a.length;i+=4){const v=alpha?a[i+3]:a[i];a[i]=a[i+1]=a[i+2]=v;a[i+3]=255}x.putImageData(d,0,0);return c}
+function simDate(){const n=new Date();if(simMin==null)return n;const d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate(),0,simMin));return d}
+function sunUpdate(){const n=simDate(),doy=(n-new Date(Date.UTC(n.getUTCFullYear(),0,0)))/864e5,h=n.getUTCHours()+n.getUTCMinutes()/60;
+ const lat=-23.44*Math.cos(2*Math.PI/365*(doy+10)),lng=-(h-12)*15,c=globe.getCoords(lat,lng,0),l=Math.hypot(c.x,c.y,c.z);SUN.x=c.x/l;SUN.y=c.y/l;SUN.z=c.z/l;
+ $('clock').textContent='UTC '+n.toISOString().slice(11,16)+(simMin==null?' · live':' · simulated')}
+async function shade(){const mat=globe.globeMaterial(),T=mat.map&&mat.map.constructor;if(!T){setTimeout(shade,500);return}
+ mat.bumpScale=14;
+ try{const R=globe.renderer();R.toneMapping=4;/*ACESFilmicToneMapping*/R.toneMappingExposure=1.15}catch(e){}
+ const[ni,ci,wi]=await Promise.all([loadImg(NIGHT),loadImg(CLOUD),loadImg(WATER)]);
+ const mk=im=>{const t=new T(im);t.wrapS=1000;t.needsUpdate=true;return t};
+ if(wi){mat.specularMap=mk(wi);try{mat.specular.set('#5a6a80');mat.shininess=22}catch(e){}}
+ const waterTex=wi?mk(wi):null;
+ if(!ni){return}
+ const nt=mk(ni);sunUpdate();
+ Object.assign(U,{nightMap:{value:nt},cloudMap:{value:ci?mk(cloudCanvas(ci)):nt},hasClouds:{value:ci?1:0},sunDir:{value:SUN},cloudShift:{value:0},waterMap:{value:waterTex},hasWater:{value:waterTex?1:0}});
+ mat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D nightMap;uniform sampler2D cloudMap;uniform float hasClouds;uniform vec3 sunDir;uniform float cloudShift;uniform sampler2D waterMap;uniform float hasWater;')
+  .replace('#include <dithering_fragment>',`#include <dithering_fragment>
+  vec3 sd=normalize((viewMatrix*vec4(sunDir,0.0)).xyz);
+  vec3 nrm=normalize(vNormal);
+  float dd=dot(nrm,sd);
+  float dayF=smoothstep(-0.12,0.2,dd);
+  vec3 base=gl_FragColor.rgb;
+  vec3 nl=texture2D(nightMap,vMapUv).rgb;
+  float cl=hasClouds>0.5?texture2D(cloudMap,vec2(vMapUv.x+cloudShift,vMapUv.y)).r:0.0;
+  float wmask=hasWater>0.5?texture2D(waterMap,vMapUv).r:0.0;
+  vec3 viewDir=normalize(vViewPosition);
+  vec3 refl=reflect(-sd,nrm);
+  float glint=pow(max(dot(normalize(viewDir),normalize(refl)),0.0),140.0)*wmask*clamp(dd*2.0,0.0,1.0)*2.2;
+  vec3 dayCol=mix(base,vec3(1.0),cl*0.7)*(0.55+0.55*clamp(dd*1.4,0.0,1.0))+vec3(1.0,0.98,0.9)*glint;
+  vec3 nightCol=base*0.05+nl*nl*1.8+vec3(0.02,0.03,0.05)*cl;
+  float tw=smoothstep(-0.12,0.05,dd)*smoothstep(0.3,0.05,dd);
+  gl_FragColor.rgb=mix(nightCol,dayCol,dayF)+vec3(1.0,0.45,0.15)*tw*0.2;`)};
+ mat.needsUpdate=true;const t0=performance.now();(function tick(){U.cloudShift.value=(performance.now()-t0)*1.2e-6;requestAnimationFrame(tick)})();
+ setInterval(sunUpdate,15000)}
+/* ---------- living sky overlay: stars, sun, moon, mars (pure canvas, nothing to fetch) ---------- */
+(function sky(){
+ const cv=$('sky'),gx=cv.getContext('2d');let W,H,stars,bodies;
+ function noise2(seed){let s=seed;return()=>{s=(s*9301+49297)%233280;return s/233280}}
+ function moonTex(seed){const n=256,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d'),rnd=noise2(seed);
+  const base=x.createRadialGradient(n*0.38,n*0.38,0,n*0.5,n*0.5,n*0.52);base.addColorStop(0,'#f1f0ee');base.addColorStop(0.55,'#d7d4cf');base.addColorStop(1,'#9a968f');
+  x.fillStyle=base;x.beginPath();x.arc(n/2,n/2,n/2,0,6.3);x.fill();
+  for(let i=0;i<55;i++){const cx=rnd()*n,cy=rnd()*n,r=6+rnd()*30;if(Math.hypot(cx-n/2,cy-n/2)>n*0.48)continue;
+   const sh=x.createRadialGradient(cx-r*0.25,cy-r*0.25,0,cx,cy,r);sh.addColorStop(0,'rgba(50,46,40,0)');sh.addColorStop(0.5,'rgba(50,46,40,0.38)');sh.addColorStop(0.85,'rgba(30,27,24,0.55)');sh.addColorStop(1,'rgba(30,27,24,0)');
+   x.fillStyle=sh;x.beginPath();x.arc(cx,cy,r,0,6.3);x.fill();
+   x.fillStyle='rgba(255,255,250,0.4)';x.beginPath();x.arc(cx-r*0.35,cy-r*0.35,r*0.4,0,6.3);x.fill()}
+  for(let i=0;i<900;i++){const a=rnd()*6.28,rr=rnd()*n*0.49,px=n/2+Math.cos(a)*rr,py=n/2+Math.sin(a)*rr;x.fillStyle=rnd()>0.5?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.05)';x.fillRect(px,py,1,1)}
+  return c}
+ const moonCv=moonTex(7);
+ function layout(){W=cv.width=innerWidth;H=cv.height=innerHeight;
+  stars=Array.from({length:520},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+0.5,ph:Math.random()*6.28,sp:0.012+Math.random()*0.03,warm:Math.random()<0.12}));
+  bodies=[
+   {name:'moon',x:W*0.11,y:H*0.72,r:70,glow:95,tex:moonCv,phase:0.78,litFrom:1},
+   {name:'venus',x:W*0.32,y:H*0.13,r:2.6,glow:9,flat:'#fdf6e0'},
+   {name:'jupiter',x:W*0.52,y:H*0.84,r:3.4,glow:9,flat:'#e7dcc4'}
+  ]}
+ layout();addEventListener('resize',layout);
+ function worldDisc(b){
+  const g=gx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.glow);g.addColorStop(0,'#cfd6dd33');g.addColorStop(1,'#cfd6dd00');
+  gx.fillStyle=g;gx.beginPath();gx.arc(b.x,b.y,b.glow,0,6.3);gx.fill();
+  gx.save();gx.beginPath();gx.arc(b.x,b.y,b.r,0,6.3);gx.clip();
+  gx.drawImage(b.tex,b.x-b.r,b.y-b.r,b.r*2,b.r*2);
+  const shade=gx.createRadialGradient(b.x-b.r*0.2,b.y-b.r*0.2,b.r*0.1,b.x,b.y,b.r*1.1);shade.addColorStop(0,'rgba(0,0,0,0)');shade.addColorStop(0.7,'rgba(0,0,0,0)');shade.addColorStop(1,'rgba(0,0,0,0.25)');
+  gx.fillStyle=shade;gx.fillRect(b.x-b.r,b.y-b.r,b.r*2,b.r*2);
+  if(b.phase<0.98){gx.fillStyle='rgba(4,7,12,0.88)';gx.beginPath();gx.ellipse(b.x+b.r*b.litFrom*(1-b.phase)*1.9,b.y,b.r*Math.max(0.25,1-b.phase*0.7),b.r*1.03,0,0,6.3);gx.fill()}
+  gx.restore()
+ }
+ function draw(t){gx.clearRect(0,0,W,H);
+  stars.forEach(s=>{const b=0.35+0.65*Math.sin(t*s.sp+s.ph);const a=Math.max(0.15,b);gx.globalAlpha=a;gx.fillStyle=s.warm?'#ffe3c2':'#eaf4ff';gx.beginPath();gx.arc(s.x,s.y,s.r,0,6.3);gx.fill();
+   if(s.r>1.3){gx.globalAlpha=a*0.35;gx.beginPath();gx.arc(s.x,s.y,s.r*2.6,0,6.3);gx.fill()}});
+  gx.globalAlpha=1;
+  bodies.forEach(b=>{
+   if(b.tex)return worldDisc(b);
+   const g=gx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.glow);g.addColorStop(0,b.flat+'cc');g.addColorStop(1,b.flat+'00');
+   gx.fillStyle=g;gx.beginPath();gx.arc(b.x,b.y,b.glow,0,6.3);gx.fill();
+   gx.fillStyle=b.flat;gx.beginPath();gx.arc(b.x,b.y,b.r,0,6.3);gx.fill()
+  });
+  requestAnimationFrame(draw)
+ }
+ requestAnimationFrame(draw)
+})();
+let satMap=null,satLayer=null;
+function refreshSatMarkers(){
+ if(!satLayer)return;satLayer.clearLayers();
+ visible().filter(c=>!c.iss).forEach(c=>{
+  const m=L.circleMarker([c.lat,c.lng],{radius:6,color:dead[keyOf(c)]?'#667':'#4fd',weight:2,fillColor:dead[keyOf(c)]?'#667':'#4fd',fillOpacity:0.85}).addTo(satLayer);
+  m.bindPopup('<b>'+c.name+'</b><br>'+c.src+'<br><button onclick="closeSatMap();select(feats['+feats.indexOf(c)+'],true)">Open this camera</button>')
+ })
+}
+function openSatMap(){
+ $('satmap').style.display='block';$('grid').style.display='none';gridOpen=false;
+ if(!satMap){
+  satMap=L.map('satmap',{worldCopyJump:true}).setView([20,0],3);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri, Maxar, Earthstar Geographics'}).addTo(satMap);
+  satLayer=L.layerGroup().addTo(satMap);
+ }
+ refreshSatMarkers();
+ setTimeout(()=>satMap.invalidateSize(),50)
+}
+function closeSatMap(){$('satmap').style.display='none'}
+$('satbtn').onclick=()=>{$('satmap').style.display==='block'?closeSatMap():openSatMap()};
+globe.onGlobeReady(shade);
+$('sun').oninput=e=>{simMin=+e.target.value;sunUpdate()};$('live').onclick=()=>{simMin=null;sunUpdate()};
+/* ---------- ISS ---------- */
+async function updIss(){try{const r=await fetch('https://api.wheretheiss.at/v1/satellites/25544'),j=await r.json();iss.lat=j.latitude;iss.lng=j.longitude;iss.alt=Math.max(.2,j.altitude/6371*2.2);
+  issTrail.push([iss.lat,iss.lng,iss.alt]);if(issTrail.length>90)issTrail.shift();globe.pathsData([issTrail]);$('iss').textContent='🛰 ISS '+j.latitude.toFixed(1)+'°, '+j.longitude.toFixed(1)+'°';render()}catch(e){}}
+updIss();setInterval(updIss,6000);
+/* ---------- viewer ---------- */
+let ytp=null,hlsI=null,imgT=null;
+function ytId(c){return c.yt.split(':')[1]}
+function stopView(){clearInterval(imgT);if(hlsI){hlsI.destroy();hlsI=null}try{ytp&&ytp.destroy()}catch(e){}ytp=null;$('vm').innerHTML='';$('vl').innerHTML=''}
+function ytLink(c){const k=c.yt.split(':')[0],id=ytId(c);return k==='channel'?'https://www.youtube.com/channel/'+id+'/live':'https://www.youtube.com/watch?v='+id}
+function openLink(c){$('vl').innerHTML='';const a=document.createElement('a');a.href=ytLink(c);a.target='_blank';a.style.color='#4fd';a.textContent='Open on YouTube ↗';$('vl').appendChild(a)}
+function markDead(c,why){dead[keyOf(c)]=why||1;lsSet('deadcams',dead);render()}
+function select(c,fly){if(gridOpen){sel=c;assign(gTarget!=null?gTarget:nextSlot(),c);gTarget=null;markTarget();render();return}sel=c;if(fly)globe.pointOfView({lat:c.lat,lng:c.lng,altitude:c.iss?2.2:.035},1500);ctl.autoRotate=false;stopView();
+ $('view').style.display='block';$('vt').textContent=c.name+' · '+c.src;$('pin').style.display=c.link?'none':'';render();const vm=$('vm');
+ if(c.link){const p=document.createElement('p'),a=document.createElement('a');a.href=c.link;a.target='_blank';a.style.color='#4fd';a.textContent='Open the official webcam page ↗';p.textContent='This camera has no embeddable feed. ';p.appendChild(a);vm.appendChild(p);return}
+ if(c.yt){const[k,id]=c.yt.split(':');
+  if(window.YT&&YT.Player){const f=document.createElement('iframe');f.id='ytp';f.allow='autoplay;encrypted-media;fullscreen';f.allowFullscreen=true;f.referrerPolicy='strict-origin-when-cross-origin';
+   f.src='https://www.youtube.com/embed/'+(k==='channel'?'live_stream?channel='+id:id)+'?autoplay=1&mute=1&playsinline=1&enablejsapi=1&origin='+location.origin;vm.appendChild(f);
+   ytp=new YT.Player('ytp',{events:{
+    onReady:e=>{try{e.target.mute();e.target.playVideo()}catch(_){}},
+    onError:e=>{const code=e.data;markDead(c,code);vm.innerHTML='<p>This camera stopped working and has been marked offline — it will no longer show up.</p>';render()},
+    onStateChange:e=>{if(e.data===-1)clearTimeout(c._vt),c._vt=setTimeout(()=>{if(sel===c){markDead(c,'timeout');vm.innerHTML='<p>This camera never started playing and has been marked offline.</p>';render()}},9000);else clearTimeout(c._vt)}}})}
+  else{const f=document.createElement('iframe');f.allow='autoplay;encrypted-media;fullscreen';f.allowFullscreen=true;f.referrerPolicy='strict-origin-when-cross-origin';f.src='https://www.youtube.com/embed/'+(k==='channel'?'live_stream?channel='+id:id)+'?autoplay=1&mute=1&playsinline=1';vm.appendChild(f)}
+  return}
+ if(c.hls&&window.Hls&&Hls.isSupported()){const v=document.createElement('video');v.muted=true;v.autoplay=true;v.controls=true;v.playsInline=true;vm.appendChild(v);hlsI=new Hls();hlsI.loadSource(c.hls);hlsI.attachMedia(v);hlsI.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal&&c.img){stopView();still(c)}});return}
+ if(c.img)still(c);else vm.innerHTML='<p>No feed available</p>'}
+function still(c){const i=document.createElement('img');$('vm').appendChild(i);const go=()=>i.src=c.img+(c.img.includes('?')?'&':'?')+'t='+Date.now();i.onerror=()=>{};go();imgT=setInterval(go,4000)}
+$('x').onclick=()=>{stopView();sel=null;$('view').style.display='none';render()};
+/* ---------- background verification (so dead cams are filtered before you ever click) ---------- */
+let verifying=false;
+function checkOne(c,finish){
+ const[k,id]=c.yt.split(':');let host=$('vhost');if(!host){host=document.createElement('div');host.id='vhost';host.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden';document.body.appendChild(host)}
+ const f=document.createElement('iframe');f.id='vp'+Math.random().toString(36).slice(2);f.width='320';f.height='180';f.allow='autoplay';
+ f.src='https://www.youtube.com/embed/'+(k==='channel'?'live_stream?channel='+id:id)+'?autoplay=1&mute=1&playsinline=1&enablejsapi=1&origin='+location.origin;
+ host.appendChild(f);let settled=false,p=null;
+ const done=ok=>{if(settled)return;settled=true;try{p&&p.destroy()}catch(e){}f.remove();finish(ok)};
+ try{p=new YT.Player(f.id,{events:{
+  onReady:e=>{try{e.target.mute();e.target.playVideo()}catch(_){}},
+  onStateChange:e=>{if(e.data===1||e.data===3)done(true)},
+  onError:()=>done(false)
+ }})}catch(e){done(false)}
+ setTimeout(()=>done(false),8000)
+}
+function vToast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(vToast.t);vToast.t=setTimeout(()=>t.style.display='none',6000)}
+function verifyAll(manual){
+ if(verifying){vToast('Already verifying…');return}
+ if(!window.YT||!YT.Player){vToast('YouTube player still loading — try again in a few seconds');return}
+ const targets=feats.filter(c=>c.yt&&!c.iss&&(manual||!dead[keyOf(c)]));
+ if(!targets.length){vToast('Nothing to verify — everything already checked. Click again to force a full recheck.');return}
+ verifying=true;let idx=0,active=0,changed=0,finished=0;const LIMIT=4,total=targets.length;
+ vToast('Verifying 0 / '+total+' cameras…');
+ function pump(){
+  while(active<LIMIT&&idx<targets.length){
+   const c=targets[idx++];active++;const was=!!dead[keyOf(c)];
+   checkOne(c,ok=>{active--;finished++;
+    if(ok&&was){delete dead[keyOf(c)];lsSet('deadcams',dead);changed++}
+    else if(!ok&&!was){dead[keyOf(c)]=1;lsSet('deadcams',dead);changed++}
+    render();vToast('Verifying '+finished+' / '+total+' cameras… ('+changed+' changed so far)');
+    if(idx<targets.length)pump();
+    else if(active===0){verifying=false;lsSet('verifiedAt',Date.now());render();vToast('Done — checked '+total+' cameras, '+changed+' marked offline/online')}
+   })
+  }
+ }
+ pump()
+}
+$('verify').onclick=()=>{delete window.__noforce;verifyAll(true)};
+function maybeAutoVerify(){const last=lsGet('verifiedAt',0);if(Date.now()-last>6*3600*1000)setTimeout(()=>verifyAll(false),1200)}
+if(window.YT&&YT.Player)maybeAutoVerify();else{const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{prev&&prev();maybeAutoVerify()}}
+/* ---------- 2x2 grid ---------- */
+const slots=[0,1,2,3].map(i=>({i,cam:null,el:null,imgT:null,hls:null}));
+let gridOpen=false,gTarget=null,fullIdx=null,capStream=null,lastRep=-1;
+const gridEl=$('grid');
+function localClock(c){const off=Math.round(c.lng/15),t=new Date(Date.now()+off*36e5);return t.toISOString().slice(0,10)+' '+t.toISOString().slice(11,19)+' (UTC'+(off>=0?'+':'')+off+')'}
+function unmount(s){clearInterval(s.imgT);s.imgT=null;if(s.hls){s.hls.destroy();s.hls=null}s.el.querySelector('.media').innerHTML=''}
+function mount(s){unmount(s);const c=s.cam,m=s.el.querySelector('.media');s.el.classList.toggle('has',!!c);if(!c)return;
+ if(c.yt){const[k,id]=c.yt.split(':'),f=document.createElement('iframe');f.id='gytp'+s.i;f.allow='autoplay;encrypted-media;fullscreen';f.referrerPolicy='strict-origin-when-cross-origin';f.src='https://www.youtube.com/embed/'+(k==='channel'?'live_stream?channel='+id:id)+'?autoplay=1&mute=1&playsinline=1&controls=0&modestbranding=1&rel=0&enablejsapi=1&origin='+location.origin;m.appendChild(f);
+  if(window.YT&&YT.Player)new YT.Player(f.id,{events:{onError:e=>{markDead(c,e.data);if(s.cam===c){s.cam=null;mount(s);render()}}}})}
+ else if(c.hls&&window.Hls&&Hls.isSupported()){const v=document.createElement('video');v.muted=true;v.autoplay=true;v.playsInline=true;m.appendChild(v);s.hls=new Hls();s.hls.loadSource(c.hls);s.hls.attachMedia(v);s.hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal&&c.img){unmount(s);gStill(s)}})}
+ else if(c.img)gStill(s);
+ else if(c.link){const a=document.createElement('a');a.href=c.link;a.target='_blank';a.textContent='Open official page ↗';a.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4fd';m.appendChild(a)}
+ s.el.querySelector('.osd.top b').textContent=c.name;
+ s.el.querySelector('.info').textContent=c.region+' · '+c.lat.toFixed(2)+', '+c.lng.toFixed(2)+' · '+c.src;
+ updOsd()}
+function gStill(s){const i=document.createElement('img'),c=s.cam;s.el.querySelector('.media').appendChild(i);const go=()=>i.src=c.img+(c.img.includes('?')?'&':'?')+'t='+Date.now();go();s.imgT=setInterval(go,4000)}
+function updOsd(){slots.forEach(s=>{if(!s.cam)return;s.el.querySelector('.clk').textContent=localClock(s.cam);s.el.querySelector('.cnt').textContent='CAM '+(s.i+1)+' / 4  ·  '+s.cam.name})}
+setInterval(updOsd,1000);
+function saveGrid(){lsSet('grid',slots.map(s=>s.cam?keyOf(s.cam):null))}
+function assign(i,c){const s=slots[i];s.cam=c;if(gridOpen)mount(s);saveGrid();markTarget()}
+function swap(a,b){if(a===b)return;const x=slots[a].cam;slots[a].cam=slots[b].cam;slots[b].cam=x;if(gridOpen){mount(slots[a]);mount(slots[b])}saveGrid()}
+function markTarget(){slots.forEach(s=>s.el.classList.toggle('target',s.i===gTarget&&!s.cam))}
+function nextSlot(){let i=slots.findIndex(s=>!s.cam);if(i<0){lastRep=(lastRep+1)%4;i=lastRep}return i}
+function openGrid(){gridOpen=true;gridEl.style.display='flex';$('view').style.display='none';$('gridbtn').classList.add('on');slots.forEach(mount)}
+function closeGrid(){back();gridOpen=false;gridEl.style.display='none';$('gridbtn').classList.remove('on');slots.forEach(unmount);if(capStream){capStream.getTracks().forEach(t=>t.stop());capStream=null}}
+$('gridbtn').onclick=()=>gridOpen?closeGrid():openGrid();$('gclose').onclick=closeGrid;
+$('gclear').onclick=()=>{slots.forEach(s=>{s.cam=null;unmount(s);s.el.classList.remove('has')});saveGrid()};
+$('osdbtn').onclick=e=>{gridEl.classList.toggle('noosd');e.target.textContent='OSD: '+(gridEl.classList.contains('noosd')?'off':'on')};
+$('pin').onclick=()=>{if(!sel)return;if(!gridOpen)openGrid();assign(nextSlot(),sel)};
+function enlarge(i){if(!slots[i].cam)return;fullIdx=i;slots.forEach(s=>s.el.classList.toggle('full',s.i===i));document.body.classList.add('isfull');
+ if(!document.fullscreenElement){try{document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}}
+function back(){if(fullIdx==null)return;fullIdx=null;slots.forEach(s=>s.el.classList.remove('full'));document.body.classList.remove('isfull');if(document.fullscreenElement){try{document.exitFullscreen()}catch(e){}}}
+function step(d){const L=slots.filter(s=>s.cam).map(s=>s.i);if(L.length<2)return toast('Only one camera in the grid');const k=L.indexOf(fullIdx);enlarge(L[(k+d+L.length)%L.length])}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&fullIdx!=null)back()});
+addEventListener('keydown',e=>{if(fullIdx==null)return;if(e.key==='ArrowRight'){step(1);e.preventDefault()}else if(e.key==='ArrowLeft'){step(-1);e.preventDefault()}else if(e.key==='Escape')back()});
+async function snap(i){const s=slots[i];if(!s.cam)return;
+ try{if(!capStream||!capStream.active){capStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false,preferCurrentTab:true,selfBrowserSurface:'include'})}
+  document.body.classList.add('snapping');await new Promise(r=>setTimeout(r,120));
+  const v=document.createElement('video');v.srcObject=capStream;v.muted=true;await v.play();await new Promise(r=>setTimeout(r,150));
+  const kx=v.videoWidth/innerWidth,ky=v.videoHeight/innerHeight;if(Math.abs(kx-ky)>.05){document.body.classList.remove('snapping');capStream.getTracks().forEach(t=>t.stop());capStream=null;return toast('In the share dialog choose "This tab" (not a window or screen)')}
+  const r=s.el.getBoundingClientRect(),cv=document.createElement('canvas');cv.width=Math.round(r.width*kx);cv.height=Math.round(r.height*ky);
+  cv.getContext('2d').drawImage(v,r.left*kx,r.top*ky,r.width*kx,r.height*ky,0,0,cv.width,cv.height);document.body.classList.remove('snapping');v.pause();
+  const fl=document.createElement('div');fl.className='flash';s.el.appendChild(fl);fl.classList.add('go');setTimeout(()=>fl.remove(),400);
+  const ts=new Date().toISOString().replace(/[-:T]/g,'').slice(0,15),nm=s.cam.name.replace(/[^\w]+/g,'_').slice(0,40);
+  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='OSIRIS_'+nm+'_'+ts+'.png';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('Snapshot saved: '+a.download)},'image/png')
+ }catch(e){document.body.classList.remove('snapping');toast('Snapshot needs permission to capture this tab ('+(e.name||'error')+')')}}
+function mute(i){const f=slots[i].el.querySelector('iframe');if(!f)return;const on=slots[i].unm=!slots[i].unm;f.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'unMute':'mute',args:[]}),'*');slots[i].el.querySelector('[data-a=mute]').textContent=on?'🔊':'🔇'}
+function act(i,a){if(a==='snap')snap(i);else if(a==='full')enlarge(i);else if(a==='clr'){slots[i].cam=null;unmount(slots[i]);slots[i].el.classList.remove('has');saveGrid()}else if(a==='prev')step(-1);else if(a==='next')step(1);else if(a==='back')back();else if(a==='mute')mute(i)}
+slots.forEach(s=>{const d=document.createElement('div');d.className='slot';
+ d.innerHTML='<div class="media"></div><div class="empty"><i>▦</i>Slot '+(s.i+1)+'<br>Drag a camera here<br>or click here, then pick from the list</div>'+
+ '<div class="osd top" title="Drag to another slot to swap"><b></b><span class="lv">● LIVE</span></div><div class="osd bot"><span class="info"></span><span class="clk"></span></div>'+
+ '<div class="tools"><button data-a="snap" title="Snapshot (PNG)">📷</button><button data-a="mute" title="Sound on/off">🔇</button><button data-a="full" title="Enlarge">⤢</button><button data-a="clr" title="Remove camera">✕</button></div>'+
+ '<button class="nav prev" data-a="prev" title="Previous (←)">‹</button><button class="nav next" data-a="next" title="Next (→)">›</button>'+
+ '<div class="fsbar"><span class="cnt"></span><button data-a="snap">📷 Snapshot</button><button data-a="back">⤡ Back to grid</button></div>';
+ s.el=d;$('gslots').appendChild(d);
+ d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
+ d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const t=e.dataTransfer.types;
+  if(t.includes('text/x-slot')){swap(+e.dataTransfer.getData('text/x-slot'),s.i)}else if(t.includes('text/x-cam')){const c=feats[+e.dataTransfer.getData('text/x-cam')];if(c)assign(s.i,c)}});
+ d.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a){act(s.i,a.dataset.a);e.stopPropagation();return}if(!s.cam){gTarget=s.i;markTarget()}else if(fullIdx==null&&e.detail===2)enlarge(s.i)});
+ const top=d.querySelector('.osd.top');top.draggable=true;top.addEventListener('dragstart',e=>{if(!s.cam){e.preventDefault();return}e.dataTransfer.setData('text/x-slot',String(s.i));e.dataTransfer.effectAllowed='move'})});
+(()=>{const saved=lsGet('grid',[]);saved.forEach((k,i)=>{const c=k&&feats.find(f=>keyOf(f)===k);if(c&&slots[i])slots[i].cam=c})})();
+/* ---------- tour / random / spin ---------- */
+function liveList(){return feats.filter(c=>!dead[keyOf(c)]&&!c.iss)}
+$('rand').onclick=()=>{const l=liveList();select(l[Math.random()*l.length|0],true)};
+$('tour').onclick=()=>{if(tourT){clearInterval(tourT);tourT=null;$('tour').classList.remove('on');$('tour').textContent='▶ Auto tour';return}
+ $('tour').classList.add('on');$('tour').textContent='⏸ Stop tour';const step=()=>{const l=liveList();select(l[Math.random()*l.length|0],true)};step();tourT=setInterval(step,22000)};
+$('spin').classList.add('on');$('spin').onclick=()=>{spinning=!spinning;ctl.autoRotate=spinning;$('spin').classList.toggle('on',spinning)};
+$('tog').onclick=()=>{$('side').classList.toggle('hide');$('tog').classList.toggle('shift')};
+/* ---------- add cameras ---------- */
+function parseYt(u){u=(u||'').trim();let m;if(m=u.match(/channel\/(UC[\w-]{22})/))return'channel:'+m[1];if(m=u.match(/(?:v=|youtu\.be\/|live\/|embed\/)([\w-]{11})/))return'video:'+m[1];if(/^UC[\w-]{22}$/.test(u))return'channel:'+u;if(/^[\w-]{11}$/.test(u))return'video:'+u;return null}
+function addCam(name,lat,lng,yt){const c={name,lat,lng,yt,src:'YouTube Live',region:regionOf(lat,lng)};feats.push(c);MINE.push({name,lat,lng,yt,src:'YouTube Live'});lsSet('mycams',MINE);return c}
+$('add').onclick=()=>{const yt=parseYt($('yt').value);if(!pick)return toast('Click the globe first to pick a spot');if(!yt)return toast('Could not read that YouTube link');addCam($('nm').value||'My camera',pick.lat,pick.lng,yt);render();toast('Camera added')};
+$('imp').onclick=()=>{let ok=0,bad=0;$('bulk').value.split('\n').forEach(line=>{if(!line.trim())return;const p=line.split('|').map(s=>s.trim());if(p.length<3){bad++;return}const ll=p[1].split(/[ ,;]+/).map(Number),yt=parseYt(p[2]);if(ll.length<2||ll.some(isNaN)||!yt){bad++;return}addCam(p[0],ll[0],ll[1],yt);ok++});$('impm').textContent=ok+' added'+(bad?', '+bad+' skipped':'');render()};
+/* ---------- open-data (non-YouTube) cameras — these are the blue dots ---------- */
+const stat=(n,ok,m)=>{let d=document.getElementById('st-'+n.replace(/\W/g,''));if(!d){d=document.createElement('div');d.id='st-'+n.replace(/\W/g,'');d.style.cssText='font-size:11px;opacity:.85;line-height:1.5';let box=$('srcstat');if(!box){box=document.createElement('div');box.id='srcstat';box.style.cssText='font-size:11px;opacity:.85;margin:4px 0;line-height:1.5';$('list').parentNode.insertBefore(box,$('list'))}box.appendChild(d)}d.style.color=ok?'#7fe':'#f88';d.textContent=(ok?'● ':'○ ')+n+' — '+m};
+const OK=v=>isFinite(parseFloat(v));
+const cars511=(name,base)=>({n:name,f:async()=>{const j=await(await fetch(base+'/api/v2/get/cameras')).json();
+  return j.map(c=>{const v=Array.isArray(c.Views)?c.Views:(c.Views&&Array.isArray(c.Views.Views)?c.Views.Views:[]);const first=v.find(x=>x&&(x.Url||x.url));
+   return{name:c.Location||c.Roadway||c.RoadwayName||name+' camera',lat:+c.Latitude,lng:+c.Longitude,img:first&&(first.Url||first.url),src:name}}).filter(c=>OK(c.lat)&&OK(c.lng)&&c.img)}});
+const OPEN=[
+ {n:'NYC DOT',f:async()=>{const j=await(await fetch('https://webcams.nyctmc.org/api/cameras')).json();return j.filter(c=>c.isOnline!==false&&OK(c.latitude)).map(c=>({name:c.name,lat:+c.latitude,lng:+c.longitude,img:c.imageUrl||('https://webcams.nyctmc.org/api/cameras/'+c.id+'/image'),src:'NYC DOT'}))}},
+ ...['01','02','03','04','05','06','07','08','09','10','11','12'].map(d=>({n:'Caltrans D'+d,f:async()=>{const j=await(await fetch('https://cwwp2.dot.ca.gov/data/d'+parseInt(d)+'/cctv/cctvStatusD'+d+'.json')).json();
+  return j.data.map(x=>x.cctv).filter(c=>c&&c.inService!=='false'&&OK(c.location.latitude)).map(c=>({name:c.location.locationName,lat:+c.location.latitude,lng:+c.location.longitude,img:c.imageData.static.currentImageURL,hls:c.imageData.streamingVideoURL,src:'Caltrans'})).filter(c=>c.img||c.hls)}})),
+ {n:'NSW Live Traffic',f:async()=>{const j=await(await fetch('https://data.livetraffic.com/cameras/traffic-cam.json')).json();
+  return j.features.filter(x=>x.geometry&&x.geometry.coordinates).map(x=>{const p=x.properties||{};return{name:(p.title||p.view||'NSW camera')+(p.direction?' – '+p.direction:''),lat:x.geometry.coordinates[1],lng:x.geometry.coordinates[0],img:p.href||p.image||p.url,src:'NSW Live Traffic'}}).filter(c=>c.img)}},
+ cars511('Ontario 511','https://511on.ca'),
+ cars511('Alberta 511','https://511.alberta.ca')
+];
+let rT=null;const renderSoon=()=>{clearTimeout(rT);rT=setTimeout(render,400)};
+OPEN.forEach(async s=>{try{const a=await s.f();a.forEach(c=>{c.region=regionOf(c.lat,c.lng);feats.push(c)});stat(s.n,true,a.length+' cameras');renderSoon()}catch(e){stat(s.n,false,'blocked or unavailable')}});
+/* ---------- init ---------- */
+$('tog').classList.remove('shift');render();sunUpdate();setInterval(()=>{if(simMin==null)sunUpdate()},30000);
+openSatMap();
+</script></body></html>
